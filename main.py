@@ -27,8 +27,11 @@ def validate_entry(text):
 
     Rejects: empty or whitespace-only text, more than 200 characters,
     more than one line, leading/trailing whitespace, and any control
-    characters (C0/C1, DEL, U+2028/U+2029, U+FEFF). Raises ValueError
-    with a plain reason on the first failure.
+    characters (C0/C1, DEL, U+2028/U+2029, U+FEFF). The entry must
+    read as a first-person confession (it must contain a first-person
+    marker: "I ", "I've", "I'm" or "my ") and must be pure ASCII, so
+    the byte count always equals the character count the gate checks.
+    Raises ValueError with a plain reason on the first failure.
     """
     if not isinstance(text, str):
         raise ValueError("entry is not a string")
@@ -42,6 +45,12 @@ def validate_entry(text):
         raise ValueError("entry must be a single line")
     if text != text.strip():
         raise ValueError("entry has leading or trailing whitespace")
+    if not any(marker in text for marker in ("I ", "I've", "I'm", "my ")):
+        raise ValueError("entry must read as a first-person confession")
+    try:
+        text.encode("ascii")
+    except UnicodeEncodeError:
+        raise ValueError("entry must be pure ASCII")
     for ch in text:
         code = ord(ch)
         if code < 0x20 or 0x7F <= code < 0xA0:
